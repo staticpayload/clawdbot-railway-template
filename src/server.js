@@ -339,8 +339,15 @@ app.get("/setup/api/status", requireSetupAuth, async (_req, res) => {
   const version = await timedCmd(["--version"], "openclaw --version");
   if (version.code === 0) versionStr = (version.output || "").trim();
 
-  const channelsHelp = await timedCmd(["channels", "add", "--help"], "openclaw channels help");
-  if (channelsHelp.code === 0) channelsHelpStr = channelsHelp.output || "";
+  // Channels help is purely informational (checks Telegram support).
+  // Run it but don't warn on failure — not worth alarming the user.
+  try {
+    const channelsHelp = await Promise.race([
+      runCmd(OPENCLAW_NODE, clawArgs(["channels", "add", "--help"])),
+      new Promise((resolve) => setTimeout(() => resolve({ code: -1, output: "" }), 10000)),
+    ]);
+    if (channelsHelp.code === 0) channelsHelpStr = channelsHelp.output || "";
+  } catch (_e) { /* silent */ }
 
   res.json({
     configured: isConfigured(),
