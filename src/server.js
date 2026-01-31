@@ -149,6 +149,7 @@ async function startGateway() {
 
   gatewayProc = childProcess.spawn(OPENCLAW_NODE, clawArgs(args), {
     stdio: "inherit",
+    cwd: "/openclaw",
     env: {
       ...process.env,
       OPENCLAW_STATE_DIR: STATE_DIR,
