@@ -85,7 +85,12 @@ function configPath() {
 
 function isConfigured() {
   try {
-    return fs.existsSync(configPath());
+    const p = configPath();
+    if (!fs.existsSync(p)) return false;
+    const content = fs.readFileSync(p, "utf8").trim();
+    if (!content) return false; // empty file
+    JSON.parse(content); // must be valid JSON
+    return true;
   } catch {
     return false;
   }
@@ -315,6 +320,21 @@ app.get("/setup/api/status", requireSetupAuth, async (_req, res) => {
     }
     return result;
   }
+
+  // Check for corrupt/empty config file
+  try {
+    const p = configPath();
+    if (fs.existsSync(p)) {
+      const raw = fs.readFileSync(p, "utf8").trim();
+      if (!raw) {
+        warnings.push("Config file exists but is empty (" + p + "). Click Reset to delete it and rerun setup.");
+      } else {
+        try { JSON.parse(raw); } catch (parseErr) {
+          warnings.push("Config file has invalid JSON (" + p + "): " + parseErr.message + ". Click Reset to fix.");
+        }
+      }
+    }
+  } catch (_e) { /* ignore fs errors */ }
 
   const version = await timedCmd(["--version"], "openclaw --version");
   if (version.code === 0) versionStr = (version.output || "").trim();

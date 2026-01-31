@@ -330,11 +330,24 @@
       renderAuth(j.authGroups && j.authGroups.length ? j.authGroups : FALLBACK_AUTH_GROUPS);
 
       // Surface server-side warnings (CLI timeouts, command failures, etc.)
+      var bannerEl = document.getElementById('warningBanner');
       if (j.warnings && j.warnings.length) {
-        for (var w = 0; w < j.warnings.length; w++) {
-          if (logEl) logEl.textContent += '\u26A0 ' + j.warnings[w] + '\n';
+        // Show inline warning banner (visible on every step)
+        if (bannerEl) {
+          var html = '<div class="warn-title">\u26A0 ' + j.warnings.length + ' warning(s) from server</div>';
+          for (var w = 0; w < j.warnings.length; w++) {
+            html += '<div class="warn-item">' + j.warnings[w] + '</div>';
+          }
+          bannerEl.innerHTML = html;
+          bannerEl.style.display = 'block';
         }
-        showToast(j.warnings.length + ' warning(s) \u2013 check logs', 'warning');
+        // Also append to log area for full context
+        for (var w2 = 0; w2 < j.warnings.length; w2++) {
+          if (logEl) logEl.textContent += '\u26A0 ' + j.warnings[w2] + '\n';
+        }
+      } else if (bannerEl) {
+        bannerEl.style.display = 'none';
+        bannerEl.innerHTML = '';
       }
 
       if (j.channelsAddHelp && j.channelsAddHelp.indexOf('telegram') === -1) {
@@ -349,7 +362,15 @@
     }).catch(function (e) {
       setStatus(false, '');
       renderAuth(FALLBACK_AUTH_GROUPS);
-      showToast('Failed to load status: ' + formatError(e), 'error');
+      // Show error in banner so it's visible on any step
+      var bannerEl = document.getElementById('warningBanner');
+      if (bannerEl) {
+        bannerEl.innerHTML = '<div class="warn-title">\u26A0 Status API unreachable</div>' +
+          '<div class="warn-item">' + formatError(e) + '</div>' +
+          '<div class="warn-item" style="color:var(--text-2);margin-top:4px">Provider list loaded from defaults. Setup may still work.</div>';
+        bannerEl.style.display = 'block';
+      }
+      showToast('Status API failed \u2013 using defaults', 'warning');
     });
   }
 
