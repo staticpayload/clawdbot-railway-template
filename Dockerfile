@@ -37,6 +37,11 @@ RUN pnpm build
 ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:install && pnpm ui:build
 
+# Verify UI assets were built (fail fast if missing)
+RUN test -f /openclaw/dist/control-ui/index.html \
+  && echo "✓ Control UI assets built" \
+  || (echo "✗ Control UI assets NOT found at /openclaw/dist/control-ui/index.html" && ls -la /openclaw/dist/ && exit 1)
+
 
 # Runtime image
 FROM node:22-bookworm
@@ -45,7 +50,10 @@ ENV NODE_ENV=production
 RUN apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates \
+    bash \
   && rm -rf /var/lib/apt/lists/*
+
+RUN corepack enable
 
 WORKDIR /app
 
