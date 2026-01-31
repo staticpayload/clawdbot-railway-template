@@ -204,7 +204,7 @@
       // If channels are unsupported, show warning
       if (j.channelsAddHelp && j.channelsAddHelp.indexOf('telegram') === -1) {
         if (logEl && !logEl.textContent.includes('telegram in `channels add --help`')) {
-          logEl.textContent += '\n⚠ Note: This OpenClaw build may not support Telegram auto-configuration.\n';
+          logEl.textContent += '\n⚠ Note: This MadBull build may not support Telegram auto-configuration.\n';
         }
       }
 

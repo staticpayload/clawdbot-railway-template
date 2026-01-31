@@ -208,14 +208,14 @@ function requireSetupAuth(req, res, next) {
   const header = req.headers.authorization || "";
   const [scheme, encoded] = header.split(" ");
   if (scheme !== "Basic" || !encoded) {
-    res.set("WWW-Authenticate", 'Basic realm="OpenClaw Setup"');
+    res.set("WWW-Authenticate", 'Basic realm="MadBull Setup"');
     return res.status(401).send("Auth required");
   }
   const decoded = Buffer.from(encoded, "base64").toString("utf8");
   const idx = decoded.indexOf(":");
   const password = idx >= 0 ? decoded.slice(idx + 1) : "";
   if (password !== SETUP_PASSWORD) {
-    res.set("WWW-Authenticate", 'Basic realm="OpenClaw Setup"');
+    res.set("WWW-Authenticate", 'Basic realm="MadBull Setup"');
     return res.status(401).send("Invalid password");
   }
   return next();
@@ -227,6 +227,11 @@ app.use(express.json({ limit: "1mb" }));
 
 // Minimal health endpoint for Railway.
 app.get("/setup/healthz", (_req, res) => res.json({ ok: true }));
+
+app.get("/setup/logo.webp", (_req, res) => {
+  res.type("image/webp");
+  res.send(fs.readFileSync(path.join(process.cwd(), "assets", "logo.webp")));
+});
 
 app.get("/setup/app.js", requireSetupAuth, (_req, res) => {
   // Serve JS for /setup (kept external to avoid inline encoding/template issues)
@@ -241,7 +246,7 @@ app.get("/setup", requireSetupAuth, (_req, res) => {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>OpenClaw Setup Wizard</title>
+  <title>MadBull Setup Wizard</title>
   <style>
     * { box-sizing: border-box; }
 
@@ -250,8 +255,8 @@ app.get("/setup", requireSetupAuth, (_req, res) => {
       --bg-card: #1a1a24;
       --bg-input: #24243a;
       --border-color: #2d2d44;
-      --accent: #6366f1;
-      --accent-hover: #7c3aed;
+      --accent: #dc2626;
+      --accent-hover: #b91c1c;
       --text-primary: #e5e5e8;
       --text-secondary: #a8a8b5;
       --text-muted: #6b6b7a;
@@ -283,7 +288,7 @@ app.get("/setup", requireSetupAuth, (_req, res) => {
       background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
       border-radius: 16px;
       margin-bottom: 2rem;
-      box-shadow: 0 8px 32px rgba(99, 102, 241, 0.2);
+      box-shadow: 0 8px 32px rgba(220, 38, 38, 0.2);
     }
 
     .hero h1 {
@@ -423,7 +428,7 @@ app.get("/setup", requireSetupAuth, (_req, res) => {
     input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
     }
 
     input::placeholder {
@@ -448,7 +453,7 @@ app.get("/setup", requireSetupAuth, (_req, res) => {
     button:hover {
       background: var(--accent-hover);
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
     }
 
     button:active {
@@ -715,7 +720,7 @@ app.get("/setup", requireSetupAuth, (_req, res) => {
 
     .file-input-label:hover {
       border-color: var(--accent);
-      background: rgba(99, 102, 241, 0.05);
+      background: rgba(220, 38, 38, 0.05);
     }
 
     @media (max-width: 768px) {
@@ -750,8 +755,9 @@ app.get("/setup", requireSetupAuth, (_req, res) => {
 <body>
   <div class="container">
     <div class="hero">
-      <h1>🦅 OpenClaw Setup</h1>
-      <p>Configure your AI gateway with our guided wizard</p>
+      <img src="/setup/logo.webp" alt="MadBull" style="width: 120px; height: auto; margin-bottom: 0.75rem; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));" />
+      <h1>MadBull Setup</h1>
+      <p>Your AI gateway that never stops charging</p>
     </div>
 
     <div class="card">
@@ -764,7 +770,7 @@ app.get("/setup", requireSetupAuth, (_req, res) => {
       <div class="link-group">
         <a href="/openclaw" target="_blank" class="link-button">
           <span>🚀</span>
-          <span>Open OpenClaw UI</span>
+          <span>Open MadBull UI</span>
         </a>
         <a href="/setup/export" target="_blank" class="link-button">
           <span>💾</span>
@@ -1360,7 +1366,7 @@ app.get("/setup/export", requireSetupAuth, async (_req, res) => {
   res.setHeader("content-type", "application/gzip");
   res.setHeader(
     "content-disposition",
-    `attachment; filename="openclaw-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.tar.gz"`,
+    `attachment; filename="madbull-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.tar.gz"`,
   );
 
   // Prefer exporting from a common /data root so archives are easy to inspect and restore.
@@ -1463,7 +1469,7 @@ app.post("/setup/import", requireSetupAuth, async (req, res) => {
     // Extract into /data.
     // We only allow safe relative paths, and we intentionally do NOT delete existing files.
     // (Users can reset/redeploy or manually clean the volume if desired.)
-    const tmpPath = path.join(os.tmpdir(), `openclaw-import-${Date.now()}.tar.gz`);
+    const tmpPath = path.join(os.tmpdir(), `madbull-import-${Date.now()}.tar.gz`);
     fs.writeFileSync(tmpPath, buf);
 
     await tar.x({
