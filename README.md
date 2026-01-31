@@ -1,70 +1,61 @@
-# OpenClaw Railway Template (1‑click deploy)
+# MadBull Railway Template
 
-This repo packages **OpenClaw** for Railway with a small **/setup** web wizard so users can deploy and onboard **without running any commands**.
+> Your AI gateway that never stops charging. 🐂
+
+One-click deploy **MadBull** (powered by [OpenClaw](https://github.com/openclaw/openclaw)) on Railway with a web-based setup wizard. No terminal required.
 
 ## What you get
 
-- **OpenClaw Gateway + Control UI** (served at `/` and `/openclaw`)
-- A friendly **Setup Wizard** at `/setup` (protected by a password)
-- Persistent state via **Railway Volume** (so config/credentials/memory survive redeploys)
-- One-click **Export backup** (so users can migrate off Railway later)
-- **Import backup** from `/setup` (advanced recovery)
+- **AI Gateway + Control UI** served at `/`
+- **Setup Wizard** at `/setup` (password-protected, modern dark UI)
+- **Persistent state** via Railway Volume — config, credentials, and memory survive redeploys
+- **Backup export/import** from `/setup` for easy migration
+- **Channel support** — Telegram, Discord, Slack bots configured from the browser
 
-## How it works (high level)
+## Deploy
 
-- The container runs a wrapper web server.
-- The wrapper protects `/setup` with `SETUP_PASSWORD`.
-- During setup, the wrapper runs `openclaw onboard --non-interactive ...` inside the container, writes state to the volume, and then starts the gateway.
-- After setup, **`/` is OpenClaw**. The wrapper reverse-proxies all traffic (including WebSockets) to the local gateway process.
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/madbull-railway)
 
-## Railway deploy instructions (what you’ll publish as a Template)
+### Required setup
 
-In Railway Template Composer:
+1. Click **Deploy on Railway** above
+2. Add a **Volume** mounted at `/data`
+3. Set these **Variables**:
 
-1) Create a new template from this GitHub repo.
-2) Add a **Volume** mounted at `/data`.
-3) Set the following variables:
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SETUP_PASSWORD` | Yes | — | Password to access `/setup` |
+| `PORT` | Yes | `8080` | Must match Railway's HTTP Proxy port |
+| `OPENCLAW_STATE_DIR` | Recommended | `~/.openclaw` | Set to `/data/.openclaw` for persistence |
+| `OPENCLAW_WORKSPACE_DIR` | Recommended | (state dir)/workspace | Set to `/data/workspace` |
+| `OPENCLAW_GATEWAY_TOKEN` | Optional | Auto-generated | Admin token for the gateway |
 
-Required:
-- `SETUP_PASSWORD` — user-provided password to access `/setup`
+4. Enable **Public Networking** (HTTP Proxy on port 8080)
+5. Deploy, then visit `https://<your-domain>/setup`
 
-Recommended:
-- `OPENCLAW_STATE_DIR=/data/.openclaw`
-- `OPENCLAW_WORKSPACE_DIR=/data/workspace`
+## Getting chat tokens
 
-Optional:
-- `OPENCLAW_GATEWAY_TOKEN` — if not set, the wrapper generates one (not ideal). In a template, set it using a generated secret.
+### Telegram
+1. Message **@BotFather** on Telegram
+2. Run `/newbot` and follow the prompts
+3. Copy the token (looks like `123456789:AA...`) and paste into `/setup`
 
-Notes:
-- This template pins OpenClaw to a known-good version by default via Docker build arg `OPENCLAW_GIT_REF`.
+### Discord
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. New Application → Bot → Add Bot
+3. **Enable MESSAGE CONTENT INTENT** (Bot → Privileged Gateway Intents) or the bot will crash
+4. Copy the Bot Token and paste into `/setup`
+5. Invite to your server via OAuth2 URL Generator (scopes: `bot`, `applications.commands`)
 
-4) Enable **Public Networking** (HTTP). Railway will assign a domain.
-5) Deploy.
+### Slack
+1. Create a Slack App at [api.slack.com](https://api.slack.com/apps)
+2. Get both the Bot Token (`xoxb-...`) and App Token (`xapp-...`)
+3. Paste into `/setup`
 
-Then:
-- Visit `https://<your-app>.up.railway.app/setup`
-- Complete setup
-- Visit `https://<your-app>.up.railway.app/` and `/openclaw`
-
-## Getting chat tokens (so you don’t have to scramble)
-
-### Telegram bot token
-1) Open Telegram and message **@BotFather**
-2) Run `/newbot` and follow the prompts
-3) BotFather will give you a token that looks like: `123456789:AA...`
-4) Paste that token into `/setup`
-
-### Discord bot token
-1) Go to the Discord Developer Portal: https://discord.com/developers/applications
-2) **New Application** → pick a name
-3) Open the **Bot** tab → **Add Bot**
-4) Copy the **Bot Token** and paste it into `/setup`
-5) Invite the bot to your server (OAuth2 URL Generator → scopes: `bot`, `applications.commands`; then choose permissions)
-
-## Local smoke test
+## Local development
 
 ```bash
-docker build -t openclaw-railway-template .
+docker build -t madbull-railway .
 
 docker run --rm -p 8080:8080 \
   -e PORT=8080 \
@@ -72,25 +63,25 @@ docker run --rm -p 8080:8080 \
   -e OPENCLAW_STATE_DIR=/data/.openclaw \
   -e OPENCLAW_WORKSPACE_DIR=/data/workspace \
   -v $(pwd)/.tmpdata:/data \
-  openclaw-railway-template
+  madbull-railway
 
 # open http://localhost:8080/setup (password: test)
 ```
 
----
+## How it works
 
-## Official template / endorsements
+The container runs a wrapper Express server that:
+1. Protects `/setup` with `SETUP_PASSWORD` (Basic Auth)
+2. Runs `openclaw onboard --non-interactive` during setup
+3. Starts the OpenClaw gateway on an internal port
+4. Reverse-proxies all traffic (including WebSockets) to the gateway
 
-- Officially recommended by OpenClaw: <https://docs.openclaw.ai/railway>
-- Railway announcement (official): [Railway tweet announcing 1‑click OpenClaw deploy](https://x.com/railway/status/2015534958925013438)
+After setup, `/` is your fully functional AI gateway.
 
-  ![Railway official tweet screenshot](assets/railway-official-tweet.jpg)
+## Upstream
 
-- Endorsement from Railway CEO: [Jake Cooper tweet endorsing the OpenClaw Railway template](https://x.com/justjake/status/2015536083514405182)
+This is a rebranded fork of [clawdbot-railway-template](https://github.com/vignesh07/clawdbot-railway-template). Upstream updates can be merged with `git fetch upstream && git merge upstream/main`.
 
-  ![Jake Cooper endorsement tweet screenshot](assets/railway-ceo-endorsement.jpg)
+## License
 
-- Created and maintained by **Vignesh N (@vignesh07)**
-- **1800+ deploys on Railway and counting** [Link to template on Railway](https://railway.com/deploy/clawdbot-railway-template)
-
-![Railway template deploy count](assets/railway-deploys.jpg)
+MIT
