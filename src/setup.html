@@ -1,0 +1,891 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MadBull Setup</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+    :root {
+      --bg: #08080c;
+      --surface: #111118;
+      --surface-2: #1a1a2e;
+      --surface-3: #222238;
+      --border: rgba(255,255,255,0.06);
+      --border-hover: rgba(255,255,255,0.12);
+      --accent: #dc2626;
+      --accent-hover: #ef4444;
+      --accent-dim: rgba(220,38,38,0.12);
+      --text: #ececf0;
+      --text-2: #8e8ea0;
+      --text-3: #555568;
+      --green: #22c55e;
+      --green-dim: rgba(34,197,94,0.15);
+      --yellow: #eab308;
+      --yellow-dim: rgba(234,179,8,0.15);
+      --red: #ef4444;
+      --red-dim: rgba(239,68,68,0.15);
+      --mono: 'SF Mono',Monaco,'Cascadia Code','Roboto Mono',Consolas,monospace;
+      --sans: -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --radius-xs: 6px;
+      --ease: cubic-bezier(0.16,1,0.3,1);
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      background-image: radial-gradient(ellipse at 50% 0%, rgba(220,38,38,0.05) 0%, transparent 60%);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── App Container ── */
+    .app {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 8px rgba(220,38,38,0.3));
+    }
+    .title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff 0%, #ff4444 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+    .subtitle {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .header-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .version {
+      font-size: 11px;
+      color: var(--text-3);
+      font-family: var(--mono);
+    }
+
+    /* ── Status Badge ── */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-badge.configured {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(34,197,94,0.25);
+    }
+    .status-badge.not-configured {
+      background: var(--red-dim);
+      color: var(--red);
+      border: 1px solid rgba(239,68,68,0.25);
+    }
+    .status-badge.loading {
+      background: var(--yellow-dim);
+      color: var(--yellow);
+      border: 1px solid rgba(234,179,8,0.25);
+    }
+    .spinner {
+      width: 13px;
+      height: 13px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg) } }
+
+    /* ── Stepper ── */
+    .stepper {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      margin-bottom: 24px;
+      padding: 0 16px;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      min-width: 80px;
+    }
+    .step-circle {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      border: 2px solid var(--border-hover);
+      background: var(--surface);
+      color: var(--text-3);
+      transition: all 0.4s var(--ease);
+    }
+    .step.active .step-circle {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 24px rgba(220,38,38,0.35);
+    }
+    .step.done .step-circle {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+    .step-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      transition: color 0.3s;
+      white-space: nowrap;
+    }
+    .step.active .step-label { color: var(--text) }
+    .step.done .step-label { color: var(--green) }
+    .step-line {
+      flex: 1;
+      height: 2px;
+      background: var(--border-hover);
+      margin-top: 19px;
+      min-width: 40px;
+      transition: background 0.4s var(--ease);
+    }
+    .step-line.done { background: var(--green) }
+
+    /* ── Wizard Card ── */
+    .wizard-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4), 0 0 40px rgba(220,38,38,0.06);
+      margin-bottom: 20px;
+    }
+
+    /* ── Panels ── */
+    .panel { display: none }
+    .panel.active {
+      display: block;
+      animation: panelIn 0.3s var(--ease);
+    }
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(8px) }
+      to { opacity: 1; transform: translateY(0) }
+    }
+    .panel h2 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .panel-desc {
+      color: var(--text-2);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .panel-hint {
+      color: var(--text-3);
+      font-size: 13px;
+      padding: 10px 14px;
+      background: var(--surface-2);
+      border-radius: var(--radius-xs);
+      border-left: 3px solid var(--accent);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    /* ── Forms ── */
+    .form-group { margin-bottom: 18px }
+    .form-group:last-child { margin-bottom: 0 }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-2);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-xs);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+    .form-group input::placeholder { color: var(--text-3) }
+    .form-group select {
+      cursor: pointer;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' stroke='%238e8ea0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+    .form-hint {
+      display: block;
+      font-size: 12px;
+      color: var(--text-3);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+    .form-hint strong { color: var(--text-2) }
+
+    /* ── Channel Sections ── */
+    .channel-group {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .channel-group:first-of-type { padding-top: 0 }
+    .channel-group:last-of-type { border-bottom: none; padding-bottom: 0 }
+    .channel-group h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .channel-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .channel-icon.tg { background: #2AABEE; color: #fff }
+    .channel-icon.dc { background: #5865F2; color: #fff }
+    .channel-icon.sl { background: #4A154B; color: #fff }
+
+    /* ── Launch Step ── */
+    .launch-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .launch-links {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Log Output ── */
+    .log-output {
+      background: #0a0a12;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      padding: 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text-2);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 320px;
+      overflow-y: auto;
+      margin-top: 12px;
+    }
+    .log-output:empty { display: none }
+
+    /* ── Wizard Navigation ── */
+    .wizard-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .wizard-nav-spacer { flex: 1 }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s var(--ease);
+      text-decoration: none;
+      white-space: nowrap;
+      line-height: 1.4;
+    }
+    .btn:active:not(:disabled) { transform: scale(0.97) }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+      box-shadow: 0 4px 16px rgba(220,38,38,0.3);
+    }
+    .btn-secondary {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border-hover);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--surface-3);
+      border-color: rgba(255,255,255,0.18);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-2);
+    }
+    .btn-ghost:hover:not(:disabled) {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+    .btn-danger {
+      background: var(--red-dim);
+      color: var(--red);
+      border: 1px solid rgba(239,68,68,0.2);
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: rgba(239,68,68,0.2);
+    }
+    .btn-success {
+      background: var(--green);
+      color: #fff;
+    }
+    .btn-success:hover:not(:disabled) {
+      background: #16a34a;
+      box-shadow: 0 4px 16px rgba(34,197,94,0.3);
+    }
+    .btn-launch {
+      background: linear-gradient(135deg, var(--accent) 0%, #991b1b 100%);
+      color: #fff;
+      padding: 12px 28px;
+      font-size: 15px;
+    }
+    .btn-launch:hover:not(:disabled) {
+      box-shadow: 0 0 32px rgba(220,38,38,0.4);
+    }
+
+    /* ── Quick Links ── */
+    .quick-links {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .quick-link {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 11px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-2);
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .quick-link:hover {
+      color: var(--accent);
+      border-color: rgba(220,38,38,0.2);
+      background: rgba(220,38,38,0.04);
+    }
+
+    /* ── Advanced Tools ── */
+    .advanced-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .advanced-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-2);
+      list-style: none;
+      transition: color 0.2s;
+    }
+    .advanced-toggle::-webkit-details-marker { display: none }
+    .advanced-toggle:hover { color: var(--text) }
+    .advanced-chevron { transition: transform 0.3s var(--ease) }
+    .advanced-section[open] .advanced-chevron { transform: rotate(180deg) }
+    .advanced-content { padding: 0 20px 20px }
+
+    .tool-section {
+      padding: 20px 0;
+      border-top: 1px solid var(--border);
+    }
+    .tool-section h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .tool-desc {
+      font-size: 13px;
+      color: var(--text-3);
+      margin-bottom: 12px;
+    }
+    .tool-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .console-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .console-row select,
+    .console-row input {
+      padding: 8px 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-xs);
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+    .console-row select { flex: 2; min-width: 180px }
+    .console-row input { flex: 1; min-width: 100px }
+    .console-row select:focus,
+    .console-row input:focus { border-color: var(--accent) }
+
+    /* ── Config Editor ── */
+    .config-path {
+      font-size: 11px;
+      color: var(--text-3);
+      font-family: var(--mono);
+      margin-bottom: 8px;
+    }
+    .config-editor {
+      width: 100%;
+      height: 260px;
+      padding: 14px;
+      background: #0a0a12;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+    }
+    .config-editor:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    /* ── File Drop ── */
+    .file-drop {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      background: var(--surface-2);
+      border: 2px dashed var(--border-hover);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-3);
+    }
+    .file-drop:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .file-drop input[type="file"] { display: none }
+    .file-drop-icon { font-size: 18px }
+    .file-drop-text { font-size: 13px }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex }
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius);
+      padding: 28px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+      animation: modalIn 0.25s var(--ease);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(10px) }
+      to { opacity: 1; transform: scale(1) translateY(0) }
+    }
+    .modal-header {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .modal-body {
+      color: var(--text-2);
+      font-size: 14px;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      max-width: 360px;
+      animation: toastIn 0.3s var(--ease);
+    }
+    .toast.active { display: flex }
+    .toast.success { border-color: var(--green) }
+    .toast.error { border-color: var(--red) }
+    .toast.warning { border-color: var(--yellow) }
+    .toast-icon { font-size: 15px; flex-shrink: 0 }
+    .toast-msg { font-size: 13px; color: var(--text) }
+    @keyframes toastIn {
+      from { transform: translateX(120%); opacity: 0 }
+      to { transform: translateX(0); opacity: 1 }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .app { padding: 16px 12px 32px }
+      .header { flex-direction: column; align-items: flex-start; gap: 12px }
+      .header-right { align-items: flex-start; flex-direction: row; gap: 8px }
+      .wizard-card { padding: 20px 16px }
+      .stepper { padding: 0 }
+      .step { min-width: 60px }
+      .step-circle { width: 32px; height: 32px; font-size: 13px }
+      .step-label { font-size: 10px }
+      .step-line { min-width: 20px; margin-top: 16px }
+      .launch-actions { flex-direction: column }
+      .quick-links { flex-direction: column }
+      .console-row { flex-direction: column }
+      .toast { right: 12px; left: 12px; bottom: 12px; max-width: none }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <img src="/setup/logo.webp" alt="MadBull" class="logo">
+        <div>
+          <h1 class="title">MadBull</h1>
+          <span class="subtitle">Setup Wizard</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div id="status"></div>
+        <span id="statusVersion" class="version"></span>
+      </div>
+    </header>
+
+    <!-- Step Indicator -->
+    <nav class="stepper">
+      <div class="step active" data-step="1">
+        <div class="step-circle"><span class="step-num">1</span></div>
+        <div class="step-label">Provider</div>
+      </div>
+      <div class="step-line" data-after="1"></div>
+      <div class="step" data-step="2">
+        <div class="step-circle"><span class="step-num">2</span></div>
+        <div class="step-label">Channels</div>
+      </div>
+      <div class="step-line" data-after="2"></div>
+      <div class="step" data-step="3">
+        <div class="step-circle"><span class="step-num">3</span></div>
+        <div class="step-label">Launch</div>
+      </div>
+    </nav>
+
+    <!-- Wizard Card -->
+    <main class="wizard-card">
+
+      <!-- Panel 1: Provider -->
+      <section class="panel active" data-step="1">
+        <h2>Choose your AI Provider</h2>
+        <p class="panel-desc">Select the model provider and enter your API credentials.</p>
+
+        <div class="form-group">
+          <label for="authGroup">Provider</label>
+          <select id="authGroup"></select>
+        </div>
+
+        <div class="form-group">
+          <label for="authChoice">Authentication Method</label>
+          <select id="authChoice"></select>
+        </div>
+
+        <div class="form-group">
+          <label for="authSecret">API Key / Token</label>
+          <input id="authSecret" type="password" placeholder="Paste your API key or token">
+          <span class="form-hint">Stored securely on the server. Never shared externally.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="flow">Setup Flow</label>
+          <select id="flow">
+            <option value="quickstart">Quickstart (recommended)</option>
+            <option value="advanced">Advanced</option>
+            <option value="manual">Manual</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Panel 2: Channels -->
+      <section class="panel" data-step="2">
+        <h2>Connect Channels</h2>
+        <p class="panel-desc">Optionally connect messaging platforms to chat with your AI.</p>
+        <div class="panel-hint">You can skip this step and add channels later from the MadBull dashboard.</div>
+
+        <div class="channel-group">
+          <h3><span class="channel-icon tg">T</span> Telegram</h3>
+          <div class="form-group">
+            <label for="telegramToken">Bot Token</label>
+            <input id="telegramToken" type="password" placeholder="123456:ABC-DEF...">
+            <span class="form-hint">Message <strong>@BotFather</strong> on Telegram, send /newbot, and copy the token.</span>
+          </div>
+        </div>
+
+        <div class="channel-group">
+          <h3><span class="channel-icon dc">D</span> Discord</h3>
+          <div class="form-group">
+            <label for="discordToken">Bot Token</label>
+            <input id="discordToken" type="password" placeholder="Your Discord bot token">
+            <span class="form-hint">From the Discord Developer Portal. Enable <strong>MESSAGE CONTENT INTENT</strong> or the bot will crash.</span>
+          </div>
+        </div>
+
+        <div class="channel-group">
+          <h3><span class="channel-icon sl">S</span> Slack</h3>
+          <div class="form-group">
+            <label for="slackBotToken">Bot Token</label>
+            <input id="slackBotToken" type="password" placeholder="xoxb-...">
+          </div>
+          <div class="form-group">
+            <label for="slackAppToken">App Token</label>
+            <input id="slackAppToken" type="password" placeholder="xapp-...">
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 3: Launch -->
+      <section class="panel" data-step="3">
+        <h2>Launch MadBull</h2>
+        <p class="panel-desc">Run the setup process to configure and start your instance.</p>
+
+        <div class="launch-actions">
+          <button id="run" class="btn btn-launch">
+            <span id="runIcon">&#9654;</span>
+            <span id="runText">Run Setup</span>
+          </button>
+          <button id="pairingApprove" class="btn btn-secondary">Approve Pairing</button>
+          <button id="reset" class="btn btn-danger">Reset</button>
+        </div>
+
+        <pre id="log" class="log-output"></pre>
+
+        <div class="launch-links" id="launchLinks" style="display:none">
+          <a href="/openclaw" target="_blank" class="btn btn-success">Open MadBull UI &#8599;</a>
+          <a href="/setup/export" class="btn btn-secondary">Download Backup</a>
+        </div>
+      </section>
+
+      <!-- Navigation -->
+      <div class="wizard-nav">
+        <button id="prevBtn" class="btn btn-ghost" style="display:none">&#8592; Back</button>
+        <div class="wizard-nav-spacer"></div>
+        <button id="nextBtn" class="btn btn-primary">Continue &#8594;</button>
+      </div>
+    </main>
+
+    <!-- Quick Links -->
+    <div class="quick-links">
+      <a href="/openclaw" target="_blank" class="quick-link">Open MadBull UI &#8599;</a>
+      <a href="/setup/export" class="quick-link">Export Backup &#8595;</a>
+    </div>
+
+    <!-- Advanced Tools -->
+    <details class="advanced-section">
+      <summary class="advanced-toggle">
+        <span>Advanced Tools</span>
+        <span class="advanced-chevron">&#9662;</span>
+      </summary>
+      <div class="advanced-content">
+
+        <!-- Debug Console -->
+        <div class="tool-section">
+          <h3>Debug Console</h3>
+          <p class="tool-desc">Run diagnostic and management commands.</p>
+          <div class="console-row">
+            <select id="consoleCmd">
+              <option value="gateway.restart">gateway.restart</option>
+              <option value="gateway.stop">gateway.stop</option>
+              <option value="gateway.start">gateway.start</option>
+              <option value="openclaw.status">openclaw status</option>
+              <option value="openclaw.health">openclaw health</option>
+              <option value="openclaw.doctor">openclaw doctor</option>
+              <option value="openclaw.logs.tail">openclaw logs --tail N</option>
+              <option value="openclaw.config.get">openclaw config get</option>
+              <option value="openclaw.version">openclaw --version</option>
+            </select>
+            <input id="consoleArg" placeholder="Argument">
+            <button id="consoleRun" class="btn btn-secondary">Run</button>
+          </div>
+          <pre id="consoleOut" class="log-output"></pre>
+        </div>
+
+        <!-- Config Editor -->
+        <div class="tool-section">
+          <h3>Config Editor</h3>
+          <p class="tool-desc">Edit the raw JSON5 config file. Auto-backup on save.</p>
+          <div id="configPath" class="config-path"></div>
+          <textarea id="configText" class="config-editor" spellcheck="false"></textarea>
+          <div class="tool-actions">
+            <button id="configReload" class="btn btn-secondary">Reload</button>
+            <button id="configSave" class="btn btn-primary">Save &amp; Restart</button>
+          </div>
+          <pre id="configOut" class="log-output"></pre>
+        </div>
+
+        <!-- Import Backup -->
+        <div class="tool-section">
+          <h3>Import Backup</h3>
+          <p class="tool-desc">Restore from a .tar.gz backup into /data and restart the gateway.</p>
+          <label class="file-drop" for="importFile">
+            <input id="importFile" type="file" accept=".tar.gz,application/gzip">
+            <span class="file-drop-icon">&#128193;</span>
+            <span id="fileInputText" class="file-drop-text">Choose .tar.gz file...</span>
+          </label>
+          <button id="importRun" class="btn btn-danger" style="margin-top:12px">Import Backup</button>
+          <pre id="importOut" class="log-output"></pre>
+        </div>
+
+      </div>
+    </details>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header" id="modalHeader">Confirm</div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button id="modalConfirm" class="btn btn-primary">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast">
+    <span id="toastIcon" class="toast-icon"></span>
+    <span id="toastMessage" class="toast-msg"></span>
+  </div>
+
+  <script src="/setup/app.js"></script>
+</body>
+</html>

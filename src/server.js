@@ -240,758 +240,95 @@ app.get("/setup/app.js", requireSetupAuth, (_req, res) => {
 });
 
 app.get("/setup", requireSetupAuth, (_req, res) => {
-  // No inline <script>: serve JS from /setup/app.js to avoid any encoding/template-literal issues.
-  res.type("html").send(`<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MadBull Setup Wizard</title>
-  <style>
-    * { box-sizing: border-box; }
-
-    :root {
-      --bg-dark: #0a0a0f;
-      --bg-card: #1a1a24;
-      --bg-input: #24243a;
-      --border-color: #2d2d44;
-      --accent: #dc2626;
-      --accent-hover: #b91c1c;
-      --text-primary: #e5e5e8;
-      --text-secondary: #a8a8b5;
-      --text-muted: #6b6b7a;
-      --success: #10b981;
-      --error: #ef4444;
-      --warning: #f59e0b;
-      --code-bg: #16162a;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: var(--bg-dark);
-      color: var(--text-primary);
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 2rem 1.5rem;
-    }
-
-    .hero {
-      text-align: center;
-      padding: 3rem 0 2rem;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
-      border-radius: 16px;
-      margin-bottom: 2rem;
-      box-shadow: 0 8px 32px rgba(220, 38, 38, 0.2);
-    }
-
-    .hero h1 {
-      margin: 0 0 0.5rem;
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: white;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
-
-    .hero p {
-      margin: 0;
-      font-size: 1.1rem;
-      color: rgba(255,255,255,0.9);
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 2rem;
-      margin: 1.5rem 0;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    }
-
-    .card h2 {
-      margin: 0 0 0.5rem;
-      font-size: 1.5rem;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .card-subtitle {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.25rem;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .status-badge.configured {
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--success);
-      border: 2px solid var(--success);
-    }
-
-    .status-badge.not-configured {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--error);
-      border: 2px solid var(--error);
-    }
-
-    .status-badge.loading {
-      background: rgba(245, 158, 11, 0.15);
-      color: var(--warning);
-      border: 2px solid var(--warning);
-    }
-
-    .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid currentColor;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .step-indicator {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-      padding: 1rem;
-      background: var(--bg-input);
-      border-radius: 12px;
-    }
-
-    .step {
-      flex: 1;
-      text-align: center;
-      padding: 0.75rem;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: all 0.3s;
-      opacity: 0.5;
-    }
-
-    .step.active {
-      background: var(--accent);
-      opacity: 1;
-      color: white;
-    }
-
-    label {
-      display: block;
-      margin-top: 1.25rem;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      font-size: 0.95rem;
-    }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 0.85rem 1rem;
-      background: var(--bg-input);
-      border: 2px solid var(--border-color);
-      border-radius: 10px;
-      color: var(--text-primary);
-      font-size: 0.95rem;
-      font-family: inherit;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
-    }
-
-    input::placeholder {
-      color: var(--text-muted);
-    }
-
-    button {
-      padding: 0.85rem 1.5rem;
-      border-radius: 10px;
-      border: none;
-      background: var(--accent);
-      color: white;
-      font-weight: 600;
-      font-size: 0.95rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    button:hover {
-      background: var(--accent-hover);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-    }
-
-    button:active {
-      transform: translateY(0);
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    button.secondary {
-      background: var(--bg-input);
-      color: var(--text-primary);
-    }
-
-    button.secondary:hover {
-      background: #2d2d44;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-
-    button.danger {
-      background: var(--error);
-    }
-
-    button.danger:hover {
-      background: #dc2626;
-    }
-
-    button.success {
-      background: var(--success);
-    }
-
-    .button-group {
-      display: flex;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-      margin-top: 1.5rem;
-    }
-
-    .link-group {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-
-    .link-button {
-      padding: 0.75rem 1.25rem;
-      background: var(--bg-input);
-      color: var(--accent);
-      text-decoration: none;
-      border-radius: 10px;
-      font-weight: 600;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      border: 2px solid var(--border-color);
-    }
-
-    .link-button:hover {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-      transform: translateY(-1px);
-    }
-
-    code {
-      background: var(--code-bg);
-      padding: 0.25rem 0.5rem;
-      border-radius: 6px;
-      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
-      font-size: 0.9em;
-      color: var(--accent);
-    }
-
-    pre {
-      background: var(--code-bg);
-      padding: 1rem;
-      border-radius: 10px;
-      overflow-x: auto;
-      margin-top: 1rem;
-      border: 1px solid var(--border-color);
-      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
-      font-size: 0.85rem;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      max-height: 400px;
-      overflow-y: auto;
-    }
-
-    .help-text {
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      margin-top: 0.5rem;
-      line-height: 1.5;
-    }
-
-    .collapsible {
-      margin-top: 1.5rem;
-    }
-
-    .collapsible-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      padding: 1rem;
-      background: var(--bg-input);
-      border-radius: 10px;
-      transition: all 0.2s;
-      user-select: none;
-    }
-
-    .collapsible-header:hover {
-      background: #2d2d44;
-    }
-
-    .collapsible-header h3 {
-      margin: 0;
-      font-size: 1.1rem;
-      color: var(--text-primary);
-    }
-
-    .collapsible-toggle {
-      transition: transform 0.3s;
-      color: var(--text-secondary);
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-
-    .collapsible-toggle.open {
-      transform: rotate(180deg);
-    }
-
-    .collapsible-content {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease-out;
-    }
-
-    .collapsible-content.open {
-      max-height: 2000px;
-      padding-top: 1rem;
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.8);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-
-    .modal.active {
-      display: flex;
-    }
-
-    .modal-content {
-      background: var(--bg-card);
-      border-radius: 16px;
-      padding: 2rem;
-      max-width: 500px;
-      width: 100%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-      border: 1px solid var(--border-color);
-    }
-
-    .modal-header {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      color: var(--text-primary);
-    }
-
-    .modal-body {
-      margin-bottom: 1.5rem;
-      color: var(--text-secondary);
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: flex-end;
-    }
-
-    .toast {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      background: var(--bg-card);
-      border: 2px solid var(--border-color);
-      border-radius: 12px;
-      padding: 1rem 1.5rem;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-      z-index: 2000;
-      display: none;
-      align-items: center;
-      gap: 0.75rem;
-      min-width: 300px;
-      animation: slideIn 0.3s ease-out;
-    }
-
-    .toast.active {
-      display: flex;
-    }
-
-    .toast.success {
-      border-color: var(--success);
-    }
-
-    .toast.error {
-      border-color: var(--error);
-    }
-
-    .toast.warning {
-      border-color: var(--warning);
-    }
-
-    @keyframes slideIn {
-      from {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
-    }
-
-    .file-input-wrapper {
-      position: relative;
-      display: inline-block;
-      width: 100%;
-      margin-top: 0.5rem;
-    }
-
-    .file-input-wrapper input[type="file"] {
-      opacity: 0;
-      position: absolute;
-      z-index: -1;
-    }
-
-    .file-input-label {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.85rem 1rem;
-      background: var(--bg-input);
-      border: 2px dashed var(--border-color);
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s;
-      color: var(--text-secondary);
-    }
-
-    .file-input-label:hover {
-      border-color: var(--accent);
-      background: rgba(220, 38, 38, 0.05);
-    }
-
-    @media (max-width: 768px) {
-      .container {
-        padding: 1rem;
-      }
-
-      .hero h1 {
-        font-size: 2rem;
-      }
-
-      .card {
-        padding: 1.5rem;
-      }
-
-      .step-indicator {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .button-group {
-        flex-direction: column;
-      }
-
-      button {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="hero">
-      <img src="/setup/logo.webp" alt="MadBull" style="width: 120px; height: auto; margin-bottom: 0.75rem; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));" />
-      <h1>MadBull Setup</h1>
-      <p>Your AI gateway that never stops charging</p>
-    </div>
-
-    <div class="card">
-      <h2>System Status</h2>
-      <div id="status" class="status-badge loading">
-        <div class="spinner"></div>
-        <span>Loading...</span>
-      </div>
-      <div id="statusVersion" class="help-text"></div>
-      <div class="link-group">
-        <a href="/openclaw" target="_blank" class="link-button">
-          <span>🚀</span>
-          <span>Open MadBull UI</span>
-        </a>
-        <a href="/setup/export" target="_blank" class="link-button">
-          <span>💾</span>
-          <span>Download Backup</span>
-        </a>
-      </div>
-    </div>
-
-    <div class="step-indicator" id="stepIndicator">
-      <div class="step" data-step="1">Step 1: Provider</div>
-      <div class="step" data-step="2">Step 2: Channels</div>
-      <div class="step" data-step="3">Step 3: Run Setup</div>
-    </div>
-
-    <div class="card">
-      <h2><span>🔐</span> Step 1: AI Provider</h2>
-      <p class="card-subtitle">Select your AI model provider and authentication method</p>
-
-      <label>Provider Group</label>
-      <select id="authGroup"></select>
-
-      <label>Authentication Method</label>
-      <select id="authChoice"></select>
-
-      <label>API Key / Token</label>
-      <input id="authSecret" type="password" placeholder="Paste your API key or token here" />
-      <div class="help-text">Keep this secret! Your credentials are stored securely on the server.</div>
-
-      <label>Wizard Flow</label>
-      <select id="flow">
-        <option value="quickstart">Quickstart (recommended)</option>
-        <option value="advanced">Advanced</option>
-        <option value="manual">Manual</option>
-      </select>
-    </div>
-
-    <div class="card">
-      <h2><span>💬</span> Step 2: Channels (Optional)</h2>
-      <p class="card-subtitle">Configure messaging platforms to interact with your AI</p>
-
-      <label>Telegram Bot Token</label>
-      <input id="telegramToken" type="password" placeholder="123456:ABC-DEF..." />
-      <div class="help-text">
-        Get from <code>@BotFather</code> on Telegram: message /newbot and copy the token
-      </div>
-
-      <label>Discord Bot Token</label>
-      <input id="discordToken" type="password" placeholder="Your Discord bot token" />
-      <div class="help-text">
-        Get from Discord Developer Portal. <strong>Important:</strong> Enable MESSAGE CONTENT INTENT or the bot will crash!
-      </div>
-
-      <label>Slack Bot Token</label>
-      <input id="slackBotToken" type="password" placeholder="xoxb-..." />
-
-      <label>Slack App Token</label>
-      <input id="slackAppToken" type="password" placeholder="xapp-..." />
-    </div>
-
-    <div class="card">
-      <h2><span>⚡</span> Step 3: Run Setup</h2>
-      <p class="card-subtitle">Execute the onboarding process</p>
-
-      <div class="button-group">
-        <button id="run" class="success">
-          <span id="runIcon">▶</span>
-          <span id="runText">Run Setup</span>
-        </button>
-        <button id="pairingApprove" class="secondary">Approve Pairing</button>
-        <button id="reset" class="danger">Reset Setup</button>
-      </div>
-
-      <pre id="log"></pre>
-      <div class="help-text">
-        Reset deletes the config file for a fresh start. Pairing approval grants DM access when dmPolicy=pairing.
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="collapsible">
-        <div class="collapsible-header" onclick="toggleCollapsible('advanced')">
-          <h3>🛠️ Advanced Tools</h3>
-          <span class="collapsible-toggle" id="advancedToggle">▼</span>
-        </div>
-        <div class="collapsible-content" id="advancedContent">
-
-          <div style="margin-top: 1.5rem;">
-            <h3 style="margin-bottom: 0.75rem;">Debug Console</h3>
-            <p class="help-text">Run safe commands for debugging and recovery</p>
-
-            <div style="display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap;">
-              <select id="consoleCmd" style="flex: 2; min-width: 200px;">
-                <option value="gateway.restart">gateway.restart</option>
-                <option value="gateway.stop">gateway.stop</option>
-                <option value="gateway.start">gateway.start</option>
-                <option value="openclaw.status">openclaw status</option>
-                <option value="openclaw.health">openclaw health</option>
-                <option value="openclaw.doctor">openclaw doctor</option>
-                <option value="openclaw.logs.tail">openclaw logs --tail N</option>
-                <option value="openclaw.config.get">openclaw config get</option>
-                <option value="openclaw.version">openclaw --version</option>
-              </select>
-              <input id="consoleArg" placeholder="Optional argument" style="flex: 1; min-width: 150px;" />
-              <button id="consoleRun" class="secondary">Run</button>
-            </div>
-            <pre id="consoleOut"></pre>
-          </div>
-
-          <div style="margin-top: 2rem;">
-            <h3 style="margin-bottom: 0.75rem;">Config Editor</h3>
-            <p class="help-text">Edit the raw config file (JSON5). Auto-backup on save.</p>
-            <div id="configPath" class="help-text"></div>
-            <textarea id="configText" style="height: 300px; font-family: 'SF Mono', Monaco, monospace; margin-top: 0.5rem;"></textarea>
-            <div class="button-group">
-              <button id="configReload" class="secondary">Reload</button>
-              <button id="configSave">Save & Restart</button>
-            </div>
-            <pre id="configOut"></pre>
-          </div>
-
-          <div style="margin-top: 2rem;">
-            <h3 style="margin-bottom: 0.75rem;">Import Backup</h3>
-            <p class="help-text">Restore from a .tar.gz backup into /data and restart gateway</p>
-            <div class="file-input-wrapper">
-              <input id="importFile" type="file" accept=".tar.gz,application/gzip" />
-              <label for="importFile" class="file-input-label">
-                <span>📁</span>
-                <span id="fileInputText">Choose .tar.gz file...</span>
-              </label>
-            </div>
-            <button id="importRun" class="danger" style="margin-top: 1rem;">Import Backup</button>
-            <pre id="importOut"></pre>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <div id="modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header" id="modalHeader">Confirm</div>
-      <div class="modal-body" id="modalBody"></div>
-      <div class="modal-actions">
-        <button class="secondary" onclick="closeModal()">Cancel</button>
-        <button id="modalConfirm">Confirm</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="toast" class="toast">
-    <span id="toastIcon"></span>
-    <span id="toastMessage"></span>
-  </div>
-
-  <script src="/setup/app.js"></script>
-</body>
-</html>`);
+  // Serve the setup wizard HTML from an external file for maintainability.
+  res.type("html").send(fs.readFileSync(path.join(process.cwd(), "src", "setup.html"), "utf8"));
 });
 
-app.get("/setup/api/status", requireSetupAuth, async (_req, res) => {
-  const version = await runCmd(OPENCLAW_NODE, clawArgs(["--version"]));
-  const channelsHelp = await runCmd(OPENCLAW_NODE, clawArgs(["channels", "add", "--help"]));
+// Auth-group definitions are static so they're always available even if CLI commands fail.
+const AUTH_GROUPS = [
+  { value: "openai", label: "OpenAI", hint: "Codex OAuth + API key", options: [
+    { value: "codex-cli", label: "OpenAI Codex OAuth (Codex CLI)" },
+    { value: "openai-codex", label: "OpenAI Codex (ChatGPT OAuth)" },
+    { value: "openai-api-key", label: "OpenAI API key" }
+  ]},
+  { value: "anthropic", label: "Anthropic", hint: "Claude Code CLI + API key", options: [
+    { value: "claude-cli", label: "Anthropic token (Claude Code CLI)" },
+    { value: "token", label: "Anthropic token (paste setup-token)" },
+    { value: "apiKey", label: "Anthropic API key" }
+  ]},
+  { value: "google", label: "Google", hint: "Gemini API key + OAuth", options: [
+    { value: "gemini-api-key", label: "Google Gemini API key" },
+    { value: "google-antigravity", label: "Google Antigravity OAuth" },
+    { value: "google-gemini-cli", label: "Google Gemini CLI OAuth" }
+  ]},
+  { value: "openrouter", label: "OpenRouter", hint: "API key", options: [
+    { value: "openrouter-api-key", label: "OpenRouter API key" }
+  ]},
+  { value: "ai-gateway", label: "Vercel AI Gateway", hint: "API key", options: [
+    { value: "ai-gateway-api-key", label: "Vercel AI Gateway API key" }
+  ]},
+  { value: "moonshot", label: "Moonshot AI", hint: "Kimi K2 + Kimi Code", options: [
+    { value: "moonshot-api-key", label: "Moonshot AI API key" },
+    { value: "kimi-code-api-key", label: "Kimi Code API key" }
+  ]},
+  { value: "zai", label: "Z.AI (GLM 4.7)", hint: "API key", options: [
+    { value: "zai-api-key", label: "Z.AI (GLM 4.7) API key" }
+  ]},
+  { value: "minimax", label: "MiniMax", hint: "M2.1 (recommended)", options: [
+    { value: "minimax-api", label: "MiniMax M2.1" },
+    { value: "minimax-api-lightning", label: "MiniMax M2.1 Lightning" }
+  ]},
+  { value: "qwen", label: "Qwen", hint: "OAuth", options: [
+    { value: "qwen-portal", label: "Qwen OAuth" }
+  ]},
+  { value: "copilot", label: "Copilot", hint: "GitHub + local proxy", options: [
+    { value: "github-copilot", label: "GitHub Copilot (GitHub device login)" },
+    { value: "copilot-proxy", label: "Copilot Proxy (local)" }
+  ]},
+  { value: "synthetic", label: "Synthetic", hint: "Anthropic-compatible (multi-model)", options: [
+    { value: "synthetic-api-key", label: "Synthetic API key" }
+  ]},
+  { value: "opencode-zen", label: "OpenCode Zen", hint: "API key", options: [
+    { value: "opencode-zen", label: "OpenCode Zen (multi-model proxy)" }
+  ]}
+];
 
-  // We reuse OpenClaw's own auth-choice grouping logic indirectly by hardcoding the same group defs.
-  // This is intentionally minimal; later we can parse the CLI help output to stay perfectly in sync.
-  const authGroups = [
-    { value: "openai", label: "OpenAI", hint: "Codex OAuth + API key", options: [
-      { value: "codex-cli", label: "OpenAI Codex OAuth (Codex CLI)" },
-      { value: "openai-codex", label: "OpenAI Codex (ChatGPT OAuth)" },
-      { value: "openai-api-key", label: "OpenAI API key" }
-    ]},
-    { value: "anthropic", label: "Anthropic", hint: "Claude Code CLI + API key", options: [
-      { value: "claude-cli", label: "Anthropic token (Claude Code CLI)" },
-      { value: "token", label: "Anthropic token (paste setup-token)" },
-      { value: "apiKey", label: "Anthropic API key" }
-    ]},
-    { value: "google", label: "Google", hint: "Gemini API key + OAuth", options: [
-      { value: "gemini-api-key", label: "Google Gemini API key" },
-      { value: "google-antigravity", label: "Google Antigravity OAuth" },
-      { value: "google-gemini-cli", label: "Google Gemini CLI OAuth" }
-    ]},
-    { value: "openrouter", label: "OpenRouter", hint: "API key", options: [
-      { value: "openrouter-api-key", label: "OpenRouter API key" }
-    ]},
-    { value: "ai-gateway", label: "Vercel AI Gateway", hint: "API key", options: [
-      { value: "ai-gateway-api-key", label: "Vercel AI Gateway API key" }
-    ]},
-    { value: "moonshot", label: "Moonshot AI", hint: "Kimi K2 + Kimi Code", options: [
-      { value: "moonshot-api-key", label: "Moonshot AI API key" },
-      { value: "kimi-code-api-key", label: "Kimi Code API key" }
-    ]},
-    { value: "zai", label: "Z.AI (GLM 4.7)", hint: "API key", options: [
-      { value: "zai-api-key", label: "Z.AI (GLM 4.7) API key" }
-    ]},
-    { value: "minimax", label: "MiniMax", hint: "M2.1 (recommended)", options: [
-      { value: "minimax-api", label: "MiniMax M2.1" },
-      { value: "minimax-api-lightning", label: "MiniMax M2.1 Lightning" }
-    ]},
-    { value: "qwen", label: "Qwen", hint: "OAuth", options: [
-      { value: "qwen-portal", label: "Qwen OAuth" }
-    ]},
-    { value: "copilot", label: "Copilot", hint: "GitHub + local proxy", options: [
-      { value: "github-copilot", label: "GitHub Copilot (GitHub device login)" },
-      { value: "copilot-proxy", label: "Copilot Proxy (local)" }
-    ]},
-    { value: "synthetic", label: "Synthetic", hint: "Anthropic-compatible (multi-model)", options: [
-      { value: "synthetic-api-key", label: "Synthetic API key" }
-    ]},
-    { value: "opencode-zen", label: "OpenCode Zen", hint: "API key", options: [
-      { value: "opencode-zen", label: "OpenCode Zen (multi-model proxy)" }
-    ]}
-  ];
+app.get("/setup/api/status", requireSetupAuth, async (_req, res) => {
+  // CLI commands may hang or fail (e.g. first deploy before openclaw is fully built).
+  // Wrap them so the response (especially authGroups) is always returned.
+  // Errors are surfaced in the `warnings` array so the UI can display them.
+  let versionStr = "";
+  let channelsHelpStr = "";
+  const warnings = [];
+
+  // Helper: run a CLI command with a timeout. runCmd always resolves, so we
+  // check the exit code to detect failures and surface them as warnings.
+  async function timedCmd(args, label, timeoutMs = 10000) {
+    const result = await Promise.race([
+      runCmd(OPENCLAW_NODE, clawArgs(args)),
+      new Promise((resolve) => setTimeout(() => resolve({ code: -1, output: `${label} timed out after ${timeoutMs / 1000}s` }), timeoutMs)),
+    ]);
+    if (result.code !== 0) {
+      // Grab first meaningful line for the warning (skip blank/stack lines)
+      const firstLine = (result.output || "").split("\n").find(l => l.trim() && !l.trim().startsWith("at ")) || result.output;
+      warnings.push(label + " (exit " + result.code + "): " + (firstLine || "").trim());
+    }
+    return result;
+  }
+
+  const version = await timedCmd(["--version"], "openclaw --version");
+  if (version.code === 0) versionStr = (version.output || "").trim();
+
+  const channelsHelp = await timedCmd(["channels", "add", "--help"], "openclaw channels help");
+  if (channelsHelp.code === 0) channelsHelpStr = channelsHelp.output || "";
 
   res.json({
     configured: isConfigured(),
     gatewayTarget: GATEWAY_TARGET,
-    openclawVersion: version.output.trim(),
-    channelsAddHelp: channelsHelp.output,
-    authGroups,
+    openclawVersion: versionStr,
+    channelsAddHelp: channelsHelpStr,
+    authGroups: AUTH_GROUPS,
+    warnings,
   });
 });
 
