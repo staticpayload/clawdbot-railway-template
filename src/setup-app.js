@@ -386,7 +386,7 @@
     };
   }
 
-  // ── Run Setup ──
+  // ── Run Setup (NDJSON streaming) ──
   document.getElementById('run').addEventListener('click', function () {
     var btn = this;
     var payload = {
@@ -408,17 +408,58 @@
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload)
     }).then(function (res) {
-      return res.text();
-    }).then(function (text) {
-      var j;
-      try { j = JSON.parse(text); } catch (_e) { j = { ok: false, output: text }; }
+      if (!res.body) {
+        // Fallback for browsers that don't support ReadableStream
+        return res.text().then(function (text) {
+          var lines = text.split('\n');
+          var ok = false;
+          for (var i = 0; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            try {
+              var msg = JSON.parse(lines[i]);
+              if (msg.type === 'log') logEl.textContent += msg.text;
+              if (msg.type === 'done') ok = msg.ok;
+            } catch (_e) {
+              logEl.textContent += lines[i] + '\n';
+            }
+          }
+          return ok;
+        });
+      }
 
-      logEl.textContent += '\n' + (j.output || JSON.stringify(j, null, 2));
+      // Stream NDJSON line by line
+      var reader = res.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
+      var finalOk = false;
 
-      if (j.ok) {
+      function processChunk(result) {
+        if (result.done) return finalOk;
+        buffer += decoder.decode(result.value, { stream: true });
+        var lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // keep incomplete last line in buffer
+        for (var i = 0; i < lines.length; i++) {
+          if (!lines[i].trim()) continue;
+          try {
+            var msg = JSON.parse(lines[i]);
+            if (msg.type === 'log') {
+              logEl.textContent += msg.text;
+              logEl.scrollTop = logEl.scrollHeight;
+            }
+            if (msg.type === 'done') finalOk = msg.ok;
+          } catch (_e) {
+            logEl.textContent += lines[i] + '\n';
+          }
+        }
+        return reader.read().then(processChunk);
+      }
+
+      return reader.read().then(processChunk);
+    }).then(function (ok) {
+      if (ok) {
         showToast('Setup completed successfully!', 'success');
       } else {
-        showToast('Setup failed \u2013 check logs below', 'error');
+        showToast('Setup failed \u2013 check logs above', 'error');
       }
       return refreshStatus();
     }).catch(function (e) {
