@@ -894,6 +894,10 @@ app.use(async (req, res) => {
     }
   }
 
+  // Inject gateway token via query parameter so the Control UI picks it up
+  // and uses it for WebSocket authentication.
+  const sep = req.url.includes("?") ? "&" : "?";
+  req.url = `${req.url}${sep}token=${encodeURIComponent(OPENCLAW_GATEWAY_TOKEN)}`;
   return proxy.web(req, res, { target: GATEWAY_TARGET });
 });
 
