@@ -104,12 +104,12 @@ function sleep(ms) {
 }
 
 async function waitForGatewayReady(opts = {}) {
-  const timeoutMs = opts.timeoutMs ?? 20_000;
+  const timeoutMs = opts.timeoutMs ?? 60_000;
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try {
       // Try the default Control UI base path, then fall back to legacy or root.
-      const paths = ["/openclaw", "/clawdbot", "/"]; 
+      const paths = ["/openclaw", "/clawdbot", "/"];
       for (const p of paths) {
         try {
           const res = await fetch(`${GATEWAY_TARGET}${p}`, { method: "GET" });
@@ -122,7 +122,7 @@ async function waitForGatewayReady(opts = {}) {
     } catch {
       // not ready
     }
-    await sleep(250);
+    await sleep(500);
   }
   return false;
 }
@@ -176,7 +176,7 @@ async function ensureGatewayRunning() {
   if (!gatewayStarting) {
     gatewayStarting = (async () => {
       await startGateway();
-      const ready = await waitForGatewayReady({ timeoutMs: 20_000 });
+      const ready = await waitForGatewayReady({ timeoutMs: 60_000 });
       if (!ready) {
         throw new Error("Gateway did not become ready in time");
       }
@@ -540,8 +540,14 @@ app.post("/setup/api/run", requireSetupAuth, async (req, res) => {
       }
 
       log("\n--- Starting gateway ---");
-      await restartGateway();
-      log("Gateway started.");
+      try {
+        await restartGateway();
+        log("Gateway started successfully.");
+      } catch (gwErr) {
+        log("\u26A0 Gateway startup issue: " + String(gwErr.message || gwErr));
+        log("The gateway may still be starting in the background.");
+        log("Try opening the MadBull UI in a minute, or click Run Setup again.");
+      }
     }
 
     send({ type: "done", ok });
